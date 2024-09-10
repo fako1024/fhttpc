@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -228,7 +229,7 @@ func TestRetries(t *testing.T) {
 	}
 
 	start = time.Now()
-	if err := New(fasthttp.MethodPut, joinURI(httpEndpoint, "doesnotexist")).RetryBackOff(intervals).Body([]byte(helloWorldString)).Run(); err == nil || err.Error() != "lookup api.example.org: no such host" {
+	if err := New(fasthttp.MethodPut, joinURI(httpEndpoint, "doesnotexist")).RetryBackOff(intervals).Body([]byte(helloWorldString)).Run(); err == nil || !strings.Contains(err.Error(), "no such host") {
 		t.Fatalf("unexpected success using Retry(): %s", err)
 	}
 	if timeTaken := time.Since(start); timeTaken < sumIntervals {
