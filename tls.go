@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 )
 
-// var defaultTransport = http.DefaultTransport.(*http.Transport).Clone()
-
 // setupClientCertificateFromBytes reads the provided client certificate / key and CA certificate
 // from memory and creates / modifies a tls.Config object
 func setupClientCertificateFromBytes(clientCert, clientKey, caCert []byte, tlsConfig *tls.Config) (*tls.Config, error) {

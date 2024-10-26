@@ -122,6 +122,7 @@ func NewMock(method, uri string, t testCase, matchFns ...MockMatchFn) *Mock {
 			MinVersion: tls.VersionTLS12,
 		}
 	}
+	m.RespHeaders(t.responseHeaders)
 
 	m.handler = func(ctx *fasthttp.RequestCtx) {
 
@@ -167,10 +168,10 @@ func NewMock(method, uri string, t testCase, matchFns ...MockMatchFn) *Mock {
 		}
 
 		// Handle headers
-		if len(t.headers) > 0 {
-			for key, val := range t.headers {
+		if len(t.requestHeaders) > 0 {
+			for key, val := range t.requestHeaders {
 				if string(ctx.Request.Header.Peek(key)) != val {
-					ctx.Error(fmt.Sprintf("MOCK: non-matching header (want %v, have %v)", t.headers, string(ctx.Request.Header.Peek(key))), fasthttp.StatusInternalServerError)
+					ctx.Error(fmt.Sprintf("MOCK: non-matching header (want %v, have %v)", t.requestHeaders, string(ctx.Request.Header.Peek(key))), fasthttp.StatusInternalServerError)
 					return
 				}
 			}
