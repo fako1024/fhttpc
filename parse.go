@@ -13,7 +13,7 @@ import (
 // Identical to struct used in labstack/echo
 type HTTPError struct {
 	Code     int
-	Message  interface{}
+	Message  any
 	Internal error // Stores the error returned by an external dependency
 }
 
@@ -34,21 +34,21 @@ func Copy(w io.Writer) func(resp *fasthttp.Response) error {
 }
 
 // ParseJSON parses the response body as JSON into a struct
-func ParseJSON(v interface{}) func(resp *fasthttp.Response) error {
+func ParseJSON(v any) func(resp *fasthttp.Response) error {
 	return func(resp *fasthttp.Response) error {
 		return jsoniter.Unmarshal(resp.Body(), v)
 	}
 }
 
 // ParseYAML parses the response body as YAML into a struct
-func ParseYAML(v interface{}) func(resp *fasthttp.Response) error {
+func ParseYAML(v any) func(resp *fasthttp.Response) error {
 	return func(resp *fasthttp.Response) error {
 		return yaml.Unmarshal(resp.Body(), v)
 	}
 }
 
 // ParseXML parses the response body as XML into a struct
-func ParseXML(v interface{}) func(resp *fasthttp.Response) error {
+func ParseXML(v any) func(resp *fasthttp.Response) error {
 	return func(resp *fasthttp.Response) error {
 		return xml.Unmarshal(resp.Body(), v)
 	}

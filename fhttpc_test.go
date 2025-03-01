@@ -28,8 +28,9 @@ type testCase struct {
 	responseFn         func(resp *fasthttp.Response) error
 	errorFn            func(resp *fasthttp.Response) error
 
-	queryParams Params
-	headers     Params
+	queryParams     Params
+	requestHeaders  Params
+	responseHeaders Params
 
 	expectedError string
 
@@ -453,7 +454,7 @@ func TestBodySet(t *testing.T) {
 }
 
 type gobEncoder struct {
-	v interface{}
+	v any
 }
 
 // Encode fulfills the Encoder interface, performing the actual encoding
@@ -739,7 +740,7 @@ func TestBasicAuth(t *testing.T) {
 
 	// Set up a mock matcher
 	mock := NewMock(fasthttp.MethodGet, uri, testCase{
-		headers: map[string]string{
+		requestHeaders: map[string]string{
 			"Authorization": "Basic " + base64.RawStdEncoding.EncodeToString([]byte(user+":"+password)),
 		},
 	}).Reply(fasthttp.StatusOK)
@@ -760,7 +761,7 @@ func TestBearerAuth(t *testing.T) {
 
 	// Set up a mock matcher
 	mock := NewMock(fasthttp.MethodGet, uri, testCase{
-		headers: map[string]string{
+		requestHeaders: map[string]string{
 			"Authorization": fmt.Sprintf("Bearer %s", token),
 		},
 	}).Reply(fasthttp.StatusOK)
@@ -781,7 +782,7 @@ func TestTokenAuth(t *testing.T) {
 
 	// Set up a mock matcher
 	mock := NewMock(fasthttp.MethodGet, uri, testCase{
-		headers: map[string]string{
+		requestHeaders: map[string]string{
 			"Authorization": fmt.Sprintf("%s %s", prefix, token),
 		},
 	}).Reply(fasthttp.StatusOK)
@@ -800,7 +801,7 @@ func TestModifyRequest(t *testing.T) {
 
 	// Set up a mock matcher
 	mock := NewMock(fasthttp.MethodGet, uri, testCase{
-		headers: map[string]string{
+		requestHeaders: map[string]string{
 			"X-TEST": "test",
 		},
 	}).Reply(fasthttp.StatusOK)
@@ -1147,7 +1148,7 @@ func TestTable(t *testing.T) {
 		},
 		New(fasthttp.MethodGet, joinURI(httpEndpoint, "simple_headers")): {
 			expectedStatusCode: fasthttp.StatusOK,
-			headers: map[string]string{
+			requestHeaders: map[string]string{
 				"X-TEST-HEADER-1": "sExavefMTeOVFu6LfLLN",
 				"X-TEST-HEADER-2": "zHW4aaMhMJzrA5eJtahB 你好世界 😊😎",
 			},
@@ -1216,6 +1217,12 @@ func TestTable(t *testing.T) {
 			responseBody:       []byte("no authorization"),
 			expectedError:      "401 Unauthorized [body=no authorization]",
 		},
+		New(fasthttp.MethodGet, joinURI(httpEndpoint, "422_response_withRFC9457")).AcceptedResponseCodes([]int{fasthttp.StatusNoContent}): {
+			expectedStatusCode: fasthttp.StatusUnprocessableEntity,
+			responseHeaders:    map[string]string{"Content-Type": "application/problem+json"},
+			responseBody:       []byte(`{"$schema":"http://localhost:8145/schemas/ErrorModel.json","title":"Unprocessable Entity","status":422,"detail":"validation failed","errors":[{"message":"expected object","location":"body.commonAnnotations"}]}]}`),
+			expectedError:      `422 Unprocessable Entity [body={"$schema":"http://localhost:8145/schemas/ErrorModel.json","title":"Unprocessable Entity","status":422,"detail":"validation failed","errors":[{"message":"expected object","location":"body.commonAnnotations"}]}]}]`,
+		},
 	}
 
 	for k, v := range testRequests {
@@ -1257,8 +1264,8 @@ func runGenericRequest(k *Request, v testCase) error {
 	}
 
 	// Handle headers
-	if len(v.headers) > 0 {
-		req.Headers(v.headers)
+	if len(v.requestHeaders) > 0 {
+		req.Headers(v.requestHeaders)
 	}
 
 	// Handle request body
