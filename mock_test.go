@@ -108,7 +108,7 @@ func NewMock(method, uri string, t testCase, matchFns ...MockMatchFn) *Mock {
 			panic(err)
 		}
 		if !caCertPool.AppendCertsFromPEM([]byte(testCACert)) {
-			panic(err)
+			panic("failed to append mock TLS server certificates")
 		}
 
 		m.ln = tls.NewListener(m.ln, &tls.Config{
